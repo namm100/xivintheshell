@@ -52,6 +52,8 @@ export type TimelineDrawOptions = {
 	drawHealingMarks: boolean;
 	drawMPTickMarks: boolean;
 	drawBuffIndicators: boolean;
+	drawAutoTickMarks: boolean;
+	drawAutoDamageMarks: boolean;
 };
 export const DEFAULT_TIMELINE_OPTIONS = {
 	drawMarkers: true,
@@ -59,6 +61,8 @@ export const DEFAULT_TIMELINE_OPTIONS = {
 	drawHealingMarks: true,
 	drawMPTickMarks: true,
 	drawBuffIndicators: true,
+	drawAutoTickMarks: true,
+	drawAutoDamageMarks: true,
 };
 
 export type CsvData = {

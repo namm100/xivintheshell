@@ -33,5 +33,19 @@ export function TimelineDisplaySettings() {
 				controller.setTimelineOptions({ drawBuffIndicators: val });
 			}}
 		/>
+		<Checkbox
+			uniqueName={"showAutoTickMarks"}
+			label={localize({ en: "show auto tick marks" })}
+			onChange={(val) => {
+				controller.setTimelineOptions({ drawAutoTickMarks: val });
+			}}
+		/>
+		<Checkbox
+			uniqueName={"showAutoDamageMarks"}
+			label={localize({ en: "show auto damage marks" })}
+			onChange={(val) => {
+				controller.setTimelineOptions({ drawAutoDamageMarks: val });
+			}}
+		/>
 	</div>;
 }

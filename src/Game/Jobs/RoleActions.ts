@@ -248,6 +248,12 @@ makeResourceAbility(ALL_JOBS, "SPRINT", 1, "cd_SPRINT", {
 	onConfirm: cancelDualcast,
 });
 
+makeAbility(ALL_JOBS, "AUTO_ATTACK", 1, "cd_AUTO_ATTACK", {
+	startOnHotbar: false,
+	applicationDelay: 0.53,
+	cooldown: 1,
+});
+
 //#endregion
 
 //#region Limit Breaks

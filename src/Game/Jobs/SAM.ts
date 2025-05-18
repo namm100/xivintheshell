@@ -129,6 +129,8 @@ export class SAMState extends GameState {
 		this.tryConsumeResource("MEDITATE");
 	}
 
+	override jobSpecificOnAutoAttack(): void {}
+
 	getFugetsuModifier(): PotencyModifier {
 		return this.hasTraitUnlocked("ENHANCED_FUGETSU_AND_FUKA")
 			? Modifiers.FugetsuEnhanced

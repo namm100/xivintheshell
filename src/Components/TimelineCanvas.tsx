@@ -1161,13 +1161,15 @@ export function drawTimelines(
 		);
 
 		// draw auto tick marks here
-		drawAutoTickMarks(
-			g_renderingProps.countdown,
-			g_renderingProps.scale,
-			displayOriginX,
-			currentY,
-			(elemBins.get(ElemType.AutoTickMark) as AutoTickMarkElem[]) ?? [],
-		);
+		if (g_renderingProps.drawOptions.drawAutoTickMarks) {
+			drawAutoTickMarks(
+				g_renderingProps.countdown,
+				g_renderingProps.scale,
+				displayOriginX,
+				currentY,
+				(elemBins.get(ElemType.AutoTickMark) as AutoTickMarkElem[]) ?? [],
+			);
+		}
 
 		// warning marks (polyglot overcap)
 		drawWarningMarks(

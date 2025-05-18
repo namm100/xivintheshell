@@ -13,6 +13,9 @@ export const COMMON_ACTIONS = ensureRecord<ActionData>()({
 		name: "Sprint",
 		label: { zh: "疾跑", ja: "スプリント" },
 	},
+	AUTO_ATTACK: {
+		name: "Auto Attack",
+	},
 });
 
 export const COMMON_COOLDOWNS = ensureRecord<CooldownData>()({
@@ -22,6 +25,8 @@ export const COMMON_COOLDOWNS = ensureRecord<CooldownData>()({
 
 	cd_TINCTURE: { name: "cd_Tincture" }, // [0, 1x]
 	cd_SPRINT: { name: "cd_Sprint" }, // [0, 1x]
+
+	cd_AUTO_ATTACK: { name: "cd_Auto_Attack" }, // [0, 1x]
 });
 
 export const COMMON_GAUGES = ensureRecord<ResourceData>()({

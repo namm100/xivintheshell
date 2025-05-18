@@ -73,6 +73,31 @@ export interface OverTimePotencyProps {
 	modifiers?: PotencyModifier[];
 }
 
+// Auto attack speed specified on lvl 100 weapon tooltip
+export const AutoAttackDelayPerJob = {
+	GNB: 2.8,
+	PLD: 2.24,
+	WAR: 3.36,
+	DRK: 2.96,
+	SAM: 2.64,
+	MNK: 2.56,
+	DRG: 2.8,
+	RPR: 3.2,
+	NIN: 2.56,
+	VPR: 2.64,
+	DNC: 3.12,
+	BRD: 3.04,
+	MCH: 2.64,
+	BLM: 3.28,
+	PCT: 2.96,
+	RDM: 3.44,
+	SMN: 3.12,
+	SCH: 3.12,
+	SGE: 2.8,
+	WHM: 3.44,
+	AST: 3.2,
+};
+
 // GameState := resources + events queue
 export class GameState {
 	config: GameConfig;
@@ -172,7 +197,16 @@ export class GameState {
 		this.skillsList = new SkillsList(this);
 		this.displayedSkills = new DisplayedSkills(this.job, config.level);
 
+		// get base auto attack delay before any modifiers.
+		// If not specified, default to Lvl 100 weapon auto delay
 		this.autoAttackDelay = 2.5; // defaults to 2.5
+		const userSpecifiedAutoSpeed = false;
+
+		if (userSpecifiedAutoSpeed) {
+			// if user specified auto speed
+		} else {
+			this.autoAttackDelay = AutoAttackDelayPerJob[this.job];
+		}
 	}
 
 	get statusPropsGenerator(): StatusPropsGenerator<PlayerState> {
@@ -448,8 +482,56 @@ export class GameState {
 	jobSpecificOnAutoAttack() {}
 
 	private onAutoAttack() {
-		// TODO: HANDLE AUTO ATTACK POTENCY
+		// handle tick mark and job specific behavior
+		controller.reportAutoTick(this.time, "auto");
 		this.jobSpecificOnAutoAttack();
+
+		// potency
+
+		// TODO: handle 1 damage auto jobs, SCH/SMN
+		const oneDmgAutoJobs = ["BLM", "PCT", "RDM", "WHM", "AST"];
+		const schsmn = ["SCH", "SMN"];
+		const diffConstant = ["BRD", "MCH"];
+
+		let basePotencyNumber = 50.0;
+		let sksAdjustedPotency = 50.0;
+
+		if (schsmn.includes(this.job)) {
+			// these jobs work differently than the rest
+			basePotencyNumber = 0.5;
+			sksAdjustedPotency = XIVMath.overtimePotency(
+				this.config.level,
+				this.config.skillSpeed,
+				basePotencyNumber,
+			);
+		} else if (oneDmgAutoJobs.includes(this.job)) {
+			// these jobs do 1 damage per auto attack
+			sksAdjustedPotency = 0.1;
+		} else {
+			// these jobs have are normal
+			const factor = diffConstant.includes(this.job) ? 80.0 : 90.0;
+			basePotencyNumber = (AutoAttackDelayPerJob[this.job] * factor) / 3.0;
+			sksAdjustedPotency = XIVMath.overtimePotency(
+				this.config.level,
+				this.config.skillSpeed,
+				basePotencyNumber,
+			);
+		}
+
+		let potency = new Potency({
+			config: this.config,
+			sourceTime: this.getDisplayTime(),
+			sourceSkill: "AUTO_ATTACK",
+			aspect: Aspect.Physical,
+			basePotency: sksAdjustedPotency,
+			snapshotTime: this.getDisplayTime(),
+			description: "",
+			targetCount: 1,
+			falloff: 1.0,
+		});
+
+		const mods: PotencyModifier[] = [];
+		//this.node.addPotency(potency);
 	}
 
 	getStatusDuration(rscType: ResourceKey): number {
@@ -650,19 +732,19 @@ export class GameState {
 	/**
 	 * add recurring auto attack event with an initial delay
 	 */
-	addRecurringAutoAttackEvent(initialDelay: number, recurringDelay: number) {
-		const autoAttackEvent = (initialDelay: number, recurringDelay: number) => {
+	addRecurringAutoAttackEvent(initialDelay: number) {
+		const autoAttackEvent = (initialDelay: number) => {
 			const event = new Event("aa tick", initialDelay, () => {
 				if (this.resources.get("AUTOS_ENGAGED").available(1) && this.isInCombat()) {
 					// do an auto
 					this.onAutoAttack();
 				}
-				this.addEvent(autoAttackEvent(recurringDelay, recurringDelay));
+				this.addEvent(autoAttackEvent(this.calculateRecurrentAutoDelay()));
 			});
 			event.addTag(EventTag.AutoTick);
 			return event;
 		};
-		this.addEvent(autoAttackEvent(initialDelay, recurringDelay));
+		this.addEvent(autoAttackEvent(initialDelay));
 	}
 
 	/**
@@ -718,7 +800,7 @@ export class GameState {
 			initDelay = initialDelay ?? autoDelay;
 		}
 		// start reccuring event with a delay
-		this.addRecurringAutoAttackEvent(initDelay, autoDelay);
+		this.addRecurringAutoAttackEvent(initDelay);
 	}
 
 	// removes current auto attack timer
@@ -753,6 +835,55 @@ export class GameState {
 		}
 	}
 
+	calculateRecurrentAutoDelay(): number {
+		if (this.job === "SAM") {
+			if (this.hasResourceAvailable("FUKA")) {
+				if (this.hasTraitUnlocked("ENHANCED_FUGETSU_AND_FUKA")) {
+					// auto-delay reduced by 13%
+					return this.autoAttackDelay * (1.0 - 0.13);
+				} else {
+					// auto-delay reduced by 10%
+					return this.autoAttackDelay * (1.0 - 0.1);
+				}
+			}
+		} else if (this.job === "VPR") {
+			// SWIFTSCALED grants 15% reduction in auto-delay
+		} else if (this.job === "MNK") {
+			// ENHANCED_GREASED_LIGHTNING_II (lvl 40) grants 15% reduction of auto-delay
+			// ENHANCED_GREASED_LIGHTNING_III (lvl 76) grants 20% reduction of auto-delay
+			// RIDDLE_OF_WIND grants 50% reduction of auto-delay
+			// return this.autoAttackDelay * (1.0 - factor) * this.hasResourceAvailable("RIDDLE_OF_WIND") ? 0.5: 1.0;
+		} else if (this.job === "BRD") {
+			// Army's Paeon grants 4% delay reduction per repertoire
+			// Army's Ethos/Muse grants delay at 1%/2%/4%/12% based on repertoire on Army's Paeon before
+			let repertoireStacks = -1;
+			if (this.hasResourceAvailable("ARMYS_PAEON")) {
+				return (
+					this.autoAttackDelay *
+					(1 - 0.04 * this.resources.get("REPERTOIRE").availableAmount())
+				);
+			} else if (this.hasResourceAvailable("ARMYS_ETHOS")) {
+				repertoireStacks = this.resources.get("ETHOS_REPERTOIRE").availableAmount();
+			} else if (this.hasResourceAvailable("ARMYS_MUSE")) {
+				repertoireStacks = this.resources.get("MUSE_REPERTOIRE").availableAmount();
+			}
+			switch (repertoireStacks) {
+				case 1:
+					return this.autoAttackDelay * (1.0 - 0.01);
+				case 2:
+					return this.autoAttackDelay * (1.0 - 0.02);
+				case 3:
+					return this.autoAttackDelay * (1.0 - 0.04);
+				case 4:
+					return this.autoAttackDelay * (1.0 - 0.12);
+				default:
+					return this.autoAttackDelay;
+			}
+		}
+
+		return this.autoAttackDelay;
+	}
+
 	/**
 	 * AUTO ATTACK LOGIC
 	 *
@@ -784,7 +915,7 @@ export class GameState {
 		// autos helper constants
 		const hasCast = capturedCastTime !== 0;
 		const autosEngaged = this.resources.get("AUTOS_ENGAGED").available(1);
-		const recurringAutoDelay = this.autoAttackDelay; // <<---- placeholder for changing auto attack speed
+		const recurringAutoDelay = this.calculateRecurrentAutoDelay();
 		const currentDelay = this.findAutoAttackTimerInQueue();
 		const startsAutos = skill.startsAuto; // <<---  for spells starting autos
 
@@ -1119,7 +1250,7 @@ export class GameState {
 		// by default abilities dont start autos
 
 		const autosEngaged = this.resources.get("AUTOS_ENGAGED").available(1);
-		const recurringAutoDelay = this.autoAttackDelay; // <<---- placeholder for changing auto attack speed
+		const recurringAutoDelay = this.calculateRecurrentAutoDelay();
 		const currentDelay = this.findAutoAttackTimerInQueue();
 		const startsAutos = skill.startsAuto || (potency && potencyNumber > 0); // <<---  for spells starting autos
 

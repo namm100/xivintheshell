@@ -104,9 +104,6 @@ export const PLD_TRACKERS = ensureRecord<ResourceData>()({
 	PLD_CONFITEOR_COMBO_TRACKER: { name: "PLD Confiteor Combo Tracker" }, // [0, 3]
 	// 0 - no combo, 1 - prominence ready
 	PLD_AOE_COMBO_TRACKER: { name: "PLD AOE Combo Tracker" }, // [0, 1]
-
-	// CAN_AUTO_ATTACK: { name: "Can Auto Attack" }, // [0, 1]
-	// AUTO_ATTACK_TRACKER: { name: "Auto Attack Tracker" }, //
 });
 
 export const PLD_TRAITS = ensureRecord<TraitData>()({
