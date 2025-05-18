@@ -1,15 +1,13 @@
-import React, { ChangeEvent, CSSProperties, ReactNode, useEffect, useState } from "react";
-import jQuery from "jquery";
+import React, { ChangeEvent, CSSProperties, ReactNode, useEffect, useState, useRef } from "react";
 import { localize } from "./Localization";
-import { Tooltip as ReactTooltip } from "react-tooltip";
-import "react-tooltip/dist/react-tooltip.css";
+import { Tooltip } from "@base-ui-components/react/tooltip";
 import { getCurrentThemeColors } from "./ColorTheme";
 import { getCachedValue, setCachedValue } from "../Controller/Common";
 import { MAX_TIMELINE_SLOTS } from "../Controller/Timeline";
 import { LiaWindowMinimize } from "react-icons/lia";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
-export type ContentNode = JSX.Element | string;
+export type ContentNode = React.JSX.Element | string;
 
 export type ValueChangeEvent = React.ChangeEvent<{ value: string }>;
 
@@ -104,50 +102,43 @@ type SaveToFileProps = {
 	fileFormat: FileFormat;
 	displayName?: ContentNode;
 };
-export class SaveToFile extends React.Component {
-	props: SaveToFileProps;
-	state: { jsonContent: object; csvContent: CsvData; pngContent?: HTMLCanvasElement };
-	constructor(props: SaveToFileProps) {
-		super(props);
-		this.props = props;
-		this.state = {
-			jsonContent: {},
-			csvContent: { body: [] },
-			pngContent: undefined,
-		};
-	}
-	updateContent() {
-		let newContent = this.props.getContentFn();
-		if (this.props.fileFormat === FileFormat.Json) this.setState({ jsonContent: newContent });
-		else if (this.props.fileFormat === FileFormat.Csv)
-			this.setState({ csvContent: newContent });
-		else if (this.props.fileFormat === FileFormat.Png) {
-			this.setState({ pngContent: newContent });
+
+export function SaveToFile(props: SaveToFileProps) {
+	const [state, setState] = useState<{
+		jsonContent: object;
+		csvContent: CsvData;
+		pngContent?: HTMLCanvasElement;
+	}>({ jsonContent: {}, csvContent: { body: [] }, pngContent: undefined });
+
+	const updateContent = () => {
+		let newContent = props.getContentFn();
+		if (props.fileFormat === FileFormat.Json) {
+			// @ts-expect-error no parsing is enforced on getContentFn
+			setState({ jsonContent: newContent });
+		} else if (props.fileFormat === FileFormat.Csv) {
+			// @ts-expect-error no parsing is enforced on getContentFn
+			setState({ csvContent: newContent });
+		} else if (props.fileFormat === FileFormat.Png) {
+			// @ts-expect-error no parsing is enforced on getContentFn
+			setState({ pngContent: newContent });
 		} else console.assert(false);
-	}
-	render() {
-		let url = "";
-		if (this.props.fileFormat === FileFormat.Json) url = getBlobUrl(this.state.jsonContent);
-		else if (this.props.fileFormat === FileFormat.Csv) url = getCsvUrl(this.state.csvContent);
-		else if (this.props.fileFormat === FileFormat.Png) {
-			url = this.state.pngContent?.toDataURL() ?? "";
-		} else console.assert(false);
-		return <a
-			style={{ color: getCurrentThemeColors().fileDownload, marginRight: 6 }}
-			href={url}
-			download={this.props.filename}
-			onClick={() => {
-				this.updateContent();
-			}}
-			onContextMenu={() => {
-				this.updateContent();
-			}}
-		>
-			{"[" +
-				(this.props.displayName === undefined ? "download" : this.props.displayName) +
-				"]"}
-		</a>;
-	}
+	};
+
+	let url = "";
+	if (props.fileFormat === FileFormat.Json) url = getBlobUrl(state.jsonContent);
+	else if (props.fileFormat === FileFormat.Csv) url = getCsvUrl(state.csvContent);
+	else if (props.fileFormat === FileFormat.Png) {
+		url = state.pngContent?.toDataURL() ?? "";
+	} else console.assert(false);
+	return <a
+		style={{ color: getCurrentThemeColors().fileDownload, marginRight: 6 }}
+		href={url}
+		download={props.filename}
+		onClick={() => updateContent()}
+		onContextMenu={() => updateContent()}
+	>
+		{`[${props.displayName === undefined ? "download" : props.displayName}]`}
+	</a>;
 }
 
 //https://thiscouldbebetter.wordpress.com/2012/12/18/loading-editing-and-saving-a-text-file-in-html5-using-javascrip/
@@ -211,17 +202,14 @@ export function asyncFetch(
 		callback(cachedContent);
 		return;
 	}
-	jQuery.ajax({
-		type: "GET",
-		url: url,
-		//dataType: "text",
-		success: (data) => {
-			callback(data);
-			fetchCache.set(url, data);
-		},
-		error: errorCallback,
-		async: true,
+	const req = new XMLHttpRequest();
+	req.addEventListener("error", errorCallback);
+	req.addEventListener("load", (data) => {
+		callback(req.responseText);
+		fetchCache.set(url, req.responseText);
 	});
+	req.open("GET", url);
+	req.send();
 }
 
 export function parseTime(timeStr: string): number {
@@ -508,41 +496,31 @@ type InputProps = {
 	style?: CSSProperties;
 	componentColor?: string; // overrides entire component's color
 };
-export class Input extends React.Component {
-	props: InputProps;
-	onChange;
-	constructor(inProps: InputProps) {
-		super(inProps);
-		this.props = inProps;
-		this.onChange = (e: ChangeEvent<{ value: string }>) => {
-			if (this.props.onChange) this.props.onChange(e.target.value);
-		};
-	}
-	render() {
-		let width = this.props.width ?? 5;
-		let inputStyle: CSSProperties = {
-			color:
-				this.props.style?.color ??
-				this.props.componentColor ??
-				getCurrentThemeColors().text,
-			backgroundColor: "transparent",
-			outline: "none",
-			border: "none",
-			borderBottom:
-				"1px solid " + (this.props.componentColor ?? getCurrentThemeColors().text),
-		};
-		let overrideStyle = this.props.style ?? {};
-		return <div style={{ ...overrideStyle, ...{ color: this.props.componentColor } }}>
-			<span>{this.props.description /* + "(" + this.state.value + ")"*/}</span>
-			<input
-				style={inputStyle}
-				size={width}
-				type="text"
-				value={this.props.defaultValue}
-				onChange={this.onChange}
-			/>
-		</div>;
-	}
+
+export function Input(props: InputProps) {
+	const onChange = (e: ChangeEvent<{ value: string }>) => {
+		if (props.onChange) props.onChange(e.target.value);
+	};
+	const themeColors = getCurrentThemeColors();
+	const width = props.width ?? 5;
+	let inputStyle: CSSProperties = {
+		color: props.style?.color ?? props.componentColor ?? themeColors.text,
+		backgroundColor: "transparent",
+		outline: "none",
+		border: "none",
+		borderBottom: "1px solid " + (props.componentColor ?? themeColors.text),
+	};
+	let overrideStyle = props.style ?? {};
+	return <div style={{ ...overrideStyle, ...{ color: props.componentColor } }}>
+		<span>{props.description /* + "(" + this.state.value + ")"*/}</span>
+		<input
+			style={inputStyle}
+			size={width}
+			type="text"
+			value={props.defaultValue}
+			onChange={onChange}
+		/>
+	</div>;
 }
 
 type SliderProps = {
@@ -620,8 +598,6 @@ export function Checkbox(props: {
 		}
 		setChecked(defaultChecked);
 		props.onChange(defaultChecked);
-		// myn: props really shouldn't update so should be fine to not have them in deps array..
-		// eslint-disable-next-line
 	}, []);
 	const checkboxStyle: CSSProperties = {
 		position: "relative",
@@ -648,6 +624,7 @@ export class ScrollAnchor extends React.Component {
 	myRef: React.RefObject<HTMLDivElement>;
 	constructor(props: {}) {
 		super(props);
+		// @ts-expect-error for some reason, newer versions allow the type to be RefObject<elem | null>
 		this.myRef = React.createRef();
 	}
 	scroll() {
@@ -724,109 +701,86 @@ export class Expandable extends React.Component {
 type LoadJsonFromFileOrUrlProps = {
 	allowLoadFromUrl: boolean;
 	defaultLoadUrl?: string;
-	loadUrlOnMount: boolean;
 	label?: ContentNode;
 	onLoadFn: (content: object) => void;
 };
-export class LoadJsonFromFileOrUrl extends React.Component {
-	loadUrl: string;
-	fileSelectorRef: React.RefObject<HTMLInputElement>;
-	props: LoadJsonFromFileOrUrlProps;
 
-	onLoadUrlChange: (evt: ChangeEvent<{ value: string }>) => void;
-	onLoadPresetFile: () => void;
-	onLoadUrl: () => void;
-	constructor(inProps: LoadJsonFromFileOrUrlProps) {
-		super(inProps);
-		this.props = inProps;
-		this.fileSelectorRef = React.createRef();
-		this.loadUrl = inProps.defaultLoadUrl ?? "";
+export function LoadJsonFromFileOrUrl(props: LoadJsonFromFileOrUrlProps) {
+	// @ts-expect-error for some reason, newer versions allow the type to be RefObject<elem | null>
+	const fileSelectorRef: React.RefObject<HTMLInputElement> = React.createRef();
+	let loadUrl = props.defaultLoadUrl ?? "";
 
-		this.onLoadUrlChange = (evt: ChangeEvent<{ value: string }>) => {
-			if (evt.target) this.loadUrl = evt.target.value;
+	const onLoadUrlChange = (evt: ChangeEvent<{ value: string }>) => {
+		if (evt.target) loadUrl = evt.target.value;
+	};
+
+	const onLoadPresetFile = () => {
+		let cur = fileSelectorRef.current;
+		if (cur && cur.files && cur.files.length > 0) {
+			let fileToLoad = cur.files[0];
+			loadFromFile(fileToLoad, (content) => props.onLoadFn(content));
+			cur.value = "";
+		}
+	};
+
+	const onLoadUrl = () => {
+		let errorHandler = function (e: any) {
+			console.log("some error occurred");
 		};
-
-		this.onLoadPresetFile = () => {
-			let cur = this.fileSelectorRef.current;
-			if (cur && cur.files && cur.files.length > 0) {
-				let fileToLoad = cur.files[0];
-				loadFromFile(fileToLoad, (content) => {
-					this.props.onLoadFn(content);
-				});
-				cur.value = "";
-			}
-		};
-
-		this.onLoadUrl = () => {
-			let errorHandler = function (e: any) {
-				console.log("some error occurred");
-			};
-			asyncFetch(
-				this.loadUrl,
-				(data) => {
-					try {
-						let content = JSON.parse(data);
-						this.props.onLoadFn(content);
-					} catch (e: any) {
-						errorHandler(e);
-					}
-				},
-				(e) => {
+		asyncFetch(
+			loadUrl,
+			(data) => {
+				try {
+					let content = JSON.parse(data);
+					props.onLoadFn(content);
+				} catch (e: any) {
 					errorHandler(e);
-				},
-			);
-		};
-	}
-	componentDidMount() {
-		if (this.props.loadUrlOnMount) this.onLoadUrl();
-	}
-	render() {
-		let colors = getCurrentThemeColors();
-		let longInputStyle = {
-			color: colors.text,
-			background: "transparent",
-			outline: "none",
-			border: "none",
-			borderBottom: "1px solid " + colors.text,
-			width: "30em",
-		};
-		return <div>
-			<div>
-				<span>
-					{this.props.label ?? localize({ en: "Load from file: ", zh: "从文件导入：" })}
-				</span>
-				<input
-					style={{
-						width: "110px",
-						color: "transparent",
+				}
+			},
+			(e) => {
+				errorHandler(e);
+			},
+		);
+	};
+	let colors = getCurrentThemeColors();
+	let longInputStyle = {
+		color: colors.text,
+		background: "transparent",
+		outline: "none",
+		border: "none",
+		borderBottom: "1px solid " + colors.text,
+		width: "30em",
+	};
+	return <div>
+		<div>
+			<span>{props.label ?? localize({ en: "Load from file: ", zh: "从文件导入：" })}</span>
+			<input
+				style={{
+					width: "110px",
+					color: "transparent",
+				}}
+				type="file"
+				ref={fileSelectorRef}
+				onChange={onLoadPresetFile}
+			/>
+		</div>
+		{props.allowLoadFromUrl ? (
+			<form>
+				<span>{localize({ en: "Load from URL: ", zh: "从URL导入：" })}</span>
+				<input defaultValue={loadUrl} style={longInputStyle} onChange={onLoadUrlChange} />
+				<span> </span>
+				<button
+					type={"submit"}
+					onClick={(e) => {
+						onLoadUrl();
+						e.preventDefault();
 					}}
-					type="file"
-					ref={this.fileSelectorRef}
-					onChange={this.onLoadPresetFile}
-				/>
-			</div>
-			{this.props.allowLoadFromUrl ? (
-				<form>
-					<span>{localize({ en: "Load from URL: ", zh: "从URL导入：" })}</span>
-					<input
-						defaultValue={this.loadUrl}
-						style={longInputStyle}
-						onChange={this.onLoadUrlChange}
-					/>
-					<span> </span>
-					<button
-						type={"submit"}
-						onClick={(e) => {
-							this.onLoadUrl();
-							e.preventDefault();
-						}}
-					>
-						{localize({ en: "load", zh: "加载" })}
-					</button>
-				</form>
-			) : undefined}
-		</div>;
-	}
+				>
+					{localize({ en: "load", zh: "加载" })}
+				</button>
+			</form>
+		) : undefined}
+	</div>;
 }
 
 export function ButtonIndicator(props: { text: ContentNode }) {
@@ -844,42 +798,7 @@ export function ButtonIndicator(props: { text: ContentNode }) {
 	</span>;
 }
 
-let setGlobalHelpTooltipContent = (newContent: ContentNode) => {};
-
-export function GlobalHelpTooltip(props: { content: ContentNode }) {
-	const [tipContent, setTipContent] = useState(props.content);
-	// hook up update function
-	useEffect(() => {
-		setGlobalHelpTooltipContent = (newContent: ContentNode) => {
-			setTipContent(newContent);
-		};
-	}, []);
-
-	let colors = getCurrentThemeColors();
-
-	return <div>
-		<style>{`
-			.help-tooltip {
-				color: ${colors.text};
-				background-color: ${colors.tipBackground};
-				opacity: 0.98;
-				max-width: 300px;
-				outline: 1px solid ${colors.bgHighContrast};
-				transition: none;
-				font-size: 100%;
-				z-index: 10;
-			}
-			.help-tooltip-arrow { display: none; }
-		`}</style>
-		<ReactTooltip
-			anchorSelect=".global-help-tooltip"
-			className="help-tooltip"
-			classNameArrow="help-tooltip-arrow"
-		>
-			{tipContent}
-		</ReactTooltip>
-	</div>;
-}
+const HELP_MOUSEOVER_HYSTERESIS_MS = 100;
 
 export function Help(props: {
 	topic: string; // need to be unique globally
@@ -898,14 +817,38 @@ export function Help(props: {
 		textAlign: "center",
 		verticalAlign: "middle",
 	};
-	return <span
-		className="help-icon global-help-tooltip"
-		style={style}
-		data-tooltip-offset={4}
-		onMouseEnter={() => {
-			setGlobalHelpTooltipContent(props.content);
-		}}
-	>
-		<span style={{ position: "relative", top: -1, color: "white" }}>&#63;</span>
-	</span>;
+	// To prevent "Flickering" behavior when the mouse is right on the help icon's boundary,
+	// we track the last mouseenter time. This should be updated even if the tooltip is not redrawn.
+	// Technically we should make the threshold to register an entry smaller than the threshold for
+	// exit to resolve this, but that seems annoying to do.
+	const lastMouseEnter = useRef(0);
+	// Manually set open/closed state instead of using Tooltip.Trigger to ensure it goes away
+	// after mousing off the (?) icon.
+	const [open, setOpen] = useState(false);
+	return <Tooltip.Root delay={0} open={open}>
+		<span
+			id={`help-${props.topic}`}
+			className="help-icon global-help-tooltip"
+			style={style}
+			data-tooltip-offset={4}
+			onMouseEnter={() => {
+				const now = Date.now();
+				if (now - lastMouseEnter.current > HELP_MOUSEOVER_HYSTERESIS_MS) {
+					setOpen(true);
+				}
+				lastMouseEnter.current = now;
+			}}
+			onMouseLeave={() => setOpen(false)}
+		>
+			<span style={{ position: "relative", top: -1, color: "white" }}>&#63;</span>
+		</span>
+		<Tooltip.Portal container={document.getElementById("globalHelpTooltipAnchor")}>
+			<Tooltip.Positioner
+				className="tooltip-positioner"
+				anchor={document.getElementById(`help-${props.topic}`)}
+			>
+				<Tooltip.Popup className="help-tooltip tooltip">{props.content}</Tooltip.Popup>
+			</Tooltip.Positioner>
+		</Tooltip.Portal>
+	</Tooltip.Root>;
 }

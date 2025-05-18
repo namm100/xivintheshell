@@ -2,7 +2,7 @@ import React, { CSSProperties } from "react";
 import { clearCachedValues } from "../Controller/Common";
 import { Expandable, Help, ButtonIndicator } from "./Common";
 import { localize } from "./Localization";
-import changelog from "../changelog.json";
+import { Changelog } from "./Changelog";
 import { getCurrentThemeColors } from "./ColorTheme";
 import { ShellJob } from "../Game/Data/Jobs";
 
@@ -14,48 +14,6 @@ const GITHUB_URL = "https://github.com/xivintheshell/xivintheshell";
 const HELP_CHANNEL_URL = "https://discord.com/channels/277897135515762698/1307922201726685236";
 
 const BALANCE_URL = "https://discord.gg/thebalanceffxiv";
-
-function Changelog() {
-	return <div className={"paragraph"}>
-		<Expandable
-			title={"Changelog"}
-			titleNode={localize({ en: "Changelog", zh: "更新日志", ja: "更新履歴" })}
-			defaultShow={false}
-			content={
-				<>
-					<div>
-						{changelog.map((entry) => {
-							let changes: JSX.Element[] = [];
-							for (let i = 0; i < entry.changes.length; i++) {
-								changes.push(<div key={i}>{entry.changes[i]}</div>);
-							}
-							return <div className={"paragraph"} key={entry.date}>
-								{entry.date}
-								<br />
-								{changes}
-							</div>;
-						})}
-					</div>
-					<div>
-						For older changelog entries before the BLM/PCT in the Shell rejoining, see
-						the old sites:&nbsp;
-						<a
-							target={"_blank"}
-							rel={"noreferrer"}
-							href={"https://miyehn.me/ffxiv-blm-rotation/"}
-						>
-							BLM in the Shell
-						</a>
-						,&nbsp;
-						<a target={"_blank"} rel={"noreferrer"} href={"https://picto.zqsz.me/"}>
-							PCT in the Shell
-						</a>
-					</div>
-				</>
-			}
-		/>
-	</div>;
-}
 
 // needs to be a function to evaluate localization
 const getAcknowledgements = () => <>
@@ -191,6 +149,7 @@ export function IntroSection(props: { job: ShellJob }) {
 	let colors = getCurrentThemeColors();
 	const job = props.job;
 	return <div>
+		<Changelog />
 		<Expandable
 			defaultShow={true}
 			title={"instructions"}
@@ -410,7 +369,7 @@ export function IntroSection(props: { job: ShellJob }) {
 												it:
 												<br />
 												Enter this tool from{" "}
-												<b>{THIS_DOMAIN + "/#/{command}"}</b> replacing{" "}
+												<b>{THIS_DOMAIN + "?{command}"}</b> replacing{" "}
 												<b>{"{command}"}</b> with one of the following:
 												<ul>
 													<li style={smallGap}>
@@ -433,7 +392,7 @@ export function IntroSection(props: { job: ShellJob }) {
 												如果浏览器缓存因不明原因出问题（比如预设了刚打完绝望满蓝这样的“非法状态”），可尝试用以下方法重置浏览器缓存：
 												<br />
 												用以下链接进入本工具：
-												<b>{THIS_DOMAIN + "/#/{command}"}</b>，然后把
+												<b>{THIS_DOMAIN + "?{command}"}</b>，然后把
 												<b>{"{command}"}</b>替换成以下两个指令之一：
 												<ul>
 													<li style={smallGap}>
@@ -454,7 +413,7 @@ export function IntroSection(props: { job: ShellJob }) {
 											<div className="paragraph">
 												ブラウザのキャッシュが何らかの理由で壊れている場合、次の方法でリセットできます。
 												<br />
-												<b>{THIS_DOMAIN + "/#/{command}"}</b> にアクセスし、
+												<b>{THIS_DOMAIN + "?{command}"}</b> にアクセスし、
 												<b>{"{command}"}</b>{" "}
 												を以下のいずれかに置き換えます：
 												<ul>
@@ -603,7 +562,6 @@ export function IntroSection(props: { job: ShellJob }) {
 							}
 						</ul>,
 					})}
-					<Changelog />
 				</div>
 			}
 		/>
