@@ -31,7 +31,7 @@ import {
 } from "./Resources";
 
 import { controller } from "../Controller/Controller";
-import { ActionNode } from "../Controller/Record";
+import { ActionNode, skillNode } from "../Controller/Record";
 import { Modifiers, Potency, PotencyKind, PotencyModifier, PotencyModifierType } from "./Potency";
 import { Buff } from "./Buffs";
 
@@ -113,6 +113,7 @@ export class GameState {
 	skillsList: SkillsList<GameState>;
 	displayedSkills: DisplayedSkills;
 	private autoAttackDelay: number; // auto attack delay
+	autoNode: ActionNode;
 
 	overTimeEffectGroups: OverTimeRegistrationGroup[] = [];
 	dotResources: ResourceKey[] = [];
@@ -207,6 +208,9 @@ export class GameState {
 		} else {
 			this.autoAttackDelay = AutoAttackDelayPerJob[this.job];
 		}
+
+		// initialize the ActionNode
+		this.autoNode = skillNode("AUTO_ATTACK", 1);
 	}
 
 	get statusPropsGenerator(): StatusPropsGenerator<PlayerState> {
@@ -531,7 +535,14 @@ export class GameState {
 		});
 
 		const mods: PotencyModifier[] = [];
-		//this.node.addPotency(potency);
+
+		this.autoNode.addPotency(potency);
+
+		this.addEvent(
+			new Event("auto dmg applied", 0.53, () => {
+				controller.resolvePotency(potency);
+			}),
+		);
 	}
 
 	getStatusDuration(rscType: ResourceKey): number {
