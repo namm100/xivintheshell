@@ -1,6 +1,6 @@
 // Currently used exclusively for compatibility with Ama's combat sim. This value is not bumped
 // for patches where there are no combat updates.
-export const CURRENT_GAME_COMBAT_PATCH = "7.2";
+export const CURRENT_GAME_COMBAT_PATCH = "7.25";
 
 // Old reddit posts indicate that most abilities (excluding floor dots
 // like Doton and Slipstream) cap at 16 targets. This may not strictly
@@ -50,6 +50,9 @@ export function containsEwCacheContent(): boolean {
 }
 
 const thisExpansion: Expansion = Expansion.DT; // change here in ew archive
+
+// Checks if we're on beta.xivintheshell.com. Set this manually if you want to test this locally.
+export const isBetaSite = window.location.hostname.startsWith("beta");
 
 // Assume that if there are no localStorage entries, this is the user's first visit to the site.
 // A timeline record is always created on page load, so this assumption should be valid.

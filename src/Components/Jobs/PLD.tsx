@@ -69,7 +69,7 @@ export class PLDStatusPropsGenerator extends StatusPropsGenerator<PLDState> {
 
 			{
 				kind: "bar",
-				name: localize({ en: "Combo Timer" }),
+				name: localize({ en: "Combo Timer", zh: "连击监控" }),
 				color: colors.pld.pldComboTimer,
 				progress: comboTimer ? comboTimer / 30 : 0,
 				valueString: comboTimer?.toFixed(3) ?? "N/A",
@@ -77,7 +77,7 @@ export class PLDStatusPropsGenerator extends StatusPropsGenerator<PLDState> {
 
 			{
 				kind: "counter",
-				name: localize({ en: "Iron Will" }),
+				name: localize({ en: "Iron Will", zh: "钢铁信念" }),
 				color: colors.pld.ironWillColor,
 				currentStacks: ironWillActive,
 				maxStacks: 1,
@@ -85,7 +85,7 @@ export class PLDStatusPropsGenerator extends StatusPropsGenerator<PLDState> {
 
 			{
 				kind: "bar",
-				name: localize({ en: "Oath Gauge" }),
+				name: localize({ en: "Oath Gauge", zh: "忠义值" }),
 				color: colors.pld.oathGaugeColor,
 				progress: oath / 100,
 				valueString: oath.toFixed(0),

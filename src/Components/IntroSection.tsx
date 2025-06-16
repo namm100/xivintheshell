@@ -1,17 +1,18 @@
 import React, { CSSProperties } from "react";
-import { clearCachedValues } from "../Controller/Common";
+import { clearCachedValues, isBetaSite } from "../Controller/Common";
 import { Expandable, Help, ButtonIndicator } from "./Common";
 import { localize } from "./Localization";
 import { Changelog } from "./Changelog";
 import { getCurrentThemeColors } from "./ColorTheme";
 import { ShellJob } from "../Game/Data/Jobs";
 
-const THIS_DOMAIN = "https://xivintheshell.com";
+const THIS_DOMAIN = isBetaSite ? "https://beta.xivintheshell.com" : "https://xivintheshell.com";
 
 const GITHUB_URL = "https://github.com/xivintheshell/xivintheshell";
 
 // #xiv_in_the_shell_support in the Balance discord
-const HELP_CHANNEL_URL = "https://discord.com/channels/277897135515762698/1307922201726685236";
+export const HELP_CHANNEL_URL =
+	"https://discord.com/channels/277897135515762698/1307922201726685236";
 
 const BALANCE_URL = "https://discord.gg/thebalanceffxiv";
 
@@ -72,7 +73,7 @@ const getAcknowledgements = () => <>
 			</li>
 			<li>
 				Chinese localization: <b>miyehn</b>, <b>Eshiya</b>, <b>Yuyuka</b>, <b>shanzhe</b>,{" "}
-				<b>小盐</b>, <b>卿落青</b>, <b>久逺</b>, <b>大猫</b>
+				<b>小盐</b>, <b>卿落青</b>, <b>久逺</b>, <b>大猫</b>, <b>洛洛可</b>, <b>青木柒</b>
 			</li>
 		</ul>,
 		zh: <ul>
@@ -98,14 +99,14 @@ const getAcknowledgements = () => <>
 				战士：<b>misterperson</b>
 			</li>
 			<li>
-				绝抢战士，龙骑士，骑士：<b>Sterling</b>
+				绝抢战士、龙骑士、骑士：<b>Sterling</b>
 			</li>
 			<li>
 				添加新职业的程序框架：<b>shanzhe</b>
 			</li>
 			<li>
 				中文本地化：<b>miyehn</b>、<b>加拉哈德</b>、<b>鱼卡</b>、<b>shanzhe</b>、<b>小盐</b>
-				、<b>卿落青</b>、<b>久逺</b>、<b>大猫</b>
+				、<b>卿落青</b>、<b>久逺</b>、<b>大猫</b>、<b>洛洛可</b>、<b>青木柒</b>
 			</li>
 		</ul>,
 	})}

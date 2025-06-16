@@ -1,5 +1,5 @@
 import React from "react";
-import { BuffType } from "../Game/Common";
+import { BuffType, SkillUnavailableReason } from "../Game/Common";
 import { ContentNode } from "./Common";
 import { MdLanguage } from "react-icons/md";
 import { getCurrentThemeColors } from "./ColorTheme";
@@ -40,12 +40,47 @@ export function localizeDate(date: string, lang: Language): string {
 }
 
 export function localizeSkillName(text: ActionKey): string {
+	if (text === "NEVER") {
+		return localize({
+			en: "unknown skill",
+			zh: "未知技能",
+		}).toString();
+	}
 	const action = Data.getAction(text);
 
 	return localize({
 		en: action.name,
 		...action.label,
 	}).toString();
+}
+
+export function localizeSkillUnavailableReason(reason?: SkillUnavailableReason): string {
+	if (reason === undefined) {
+		return localize({ en: "reason unknown", zh: "未知的理由" }).toString();
+	}
+	let zhReason = "（未知的理由）";
+	if (reason === SkillUnavailableReason.Blocked) {
+		zhReason = "在CD，能力技后摇，或读条税中";
+	} else if (reason === SkillUnavailableReason.SecondaryBlocked) {
+		zhReason = "在次要的CD中";
+	} else if (reason === SkillUnavailableReason.NotEnoughMP) {
+		zhReason = "MP不足";
+	} else if (reason === SkillUnavailableReason.NotInCombat) {
+		zhReason = "不在战斗中（需先等第一次伤害结算）";
+	} else if (reason === SkillUnavailableReason.RequirementsNotMet) {
+		zhReason = "未满足释放条件";
+	} else if (reason === SkillUnavailableReason.SkillNotUnlocked) {
+		zhReason = "Lv比此技能的习得条件低";
+	} else if (reason === SkillUnavailableReason.BuffNoLongerAvailable) {
+		zhReason = "BUFF以结束";
+	} else if (reason === SkillUnavailableReason.PastTargetTime) {
+		zhReason = "跳时间的目标已经过去了";
+	} else if (reason === SkillUnavailableReason.CastCanceled) {
+		zhReason = "咏唱被中断（确定时不再满足播放条件）";
+	} else {
+		console.error("unlocalized reason: " + reason);
+	}
+	return localize({ en: reason, zh: zhReason }).toString();
 }
 
 const buffsZh = new Map<BuffType, string>([
@@ -186,7 +221,6 @@ const modifierNames = new Map<PotencyModifierType, LocalizedContent>([
 	],
 	[PotencyModifierType.ENHANCED_REAPING, { en: "enhanced reaping", zh: "虚无/交错收割效果提高" }],
 	[PotencyModifierType.IMMORTAL_SACRIFICE, { en: "immortal sacrifice" }],
-	[PotencyModifierType.SURGING_TEMPEST, { en: "surging tempest" }],
 	[PotencyModifierType.BARRAGE, { en: "barrage" }],
 	[PotencyModifierType.RAGING_STRIKES, { en: "raging strikes" }],
 	[PotencyModifierType.BATTLE_VOICE, { en: "battle voice" }],
@@ -196,18 +230,18 @@ const modifierNames = new Map<PotencyModifierType, LocalizedContent>([
 	[PotencyModifierType.WANDERERS_MINUET, { en: "wanderer's minuet" }],
 	[PotencyModifierType.MAGES_BALLAD, { en: "mage's ballad" }],
 	[PotencyModifierType.ARMYS_PAEON, { en: "army's paeon" }],
-	[PotencyModifierType.NO_MERCY, { en: "no mercy" }], // gnb
-	[PotencyModifierType.SEARING_LIGHT, { en: "searing light" }],
+	[PotencyModifierType.NO_MERCY, { en: "no mercy", zh: "无情" }], // gnb
+	[PotencyModifierType.SEARING_LIGHT, { en: "searing light", zh: "灼热之光" }],
 	[PotencyModifierType.SURGING_TEMPEST, { en: "surging tempest", zh: "战场风暴" }],
 	[PotencyModifierType.POWER_SURGE, { en: "power surge" }], // drg
 	[PotencyModifierType.LANCE_CHARGE, { en: "lance charge" }],
 	[PotencyModifierType.ENHANCED_PIERCING_TALON, { en: "enhanced piercing talon" }],
 	[PotencyModifierType.LIFE_OF_THE_DRAGON, { en: "life of the dragon" }],
 	[PotencyModifierType.LIFE_SURGE, { en: "life surge" }],
-	[PotencyModifierType.PET, { en: "pet modifier" }],
-	[PotencyModifierType.DIVINE_MIGHT, { en: "divine might" }],
-	[PotencyModifierType.REQUIESCAT, { en: "requiescat" }],
-	[PotencyModifierType.FIGHT_OR_FLIGHT, { en: "fight or flight" }],
+	[PotencyModifierType.PET, { en: "pet modifier", zh: "召唤物加成" }],
+	[PotencyModifierType.DIVINE_MIGHT, { en: "divine might", zh: "神圣魔法效果提高" }],
+	[PotencyModifierType.REQUIESCAT, { en: "requiescat", zh: "安魂祈祷" }],
+	[PotencyModifierType.FIGHT_OR_FLIGHT, { en: "fight or flight", zh: "战逃反应" }],
 ]);
 export function localizeModifierName(modifierType: PotencyModifierType): string {
 	console.assert(
@@ -250,7 +284,6 @@ const modifierTags = new Map<PotencyModifierType, LocalizedContent>([
 	[PotencyModifierType.ENHANCED_GIBBET_GALLOWS, { en: "E. GIB/GAL", zh: "绞决/缢杀↑" }],
 	[PotencyModifierType.ENHANCED_REAPING, { en: "E. REAPING", zh: "虚无/交错收割↑" }],
 	[PotencyModifierType.IMMORTAL_SACRIFICE, { en: "IMMORTAL SAC", zh: "死亡祭品" }],
-	[PotencyModifierType.SURGING_TEMPEST, { en: "SURGING" }],
 	[PotencyModifierType.BARRAGE, { en: "BRG" }],
 	[PotencyModifierType.RAGING_STRIKES, { en: "RS" }],
 	[PotencyModifierType.BATTLE_VOICE, { en: "BV" }],
@@ -260,8 +293,8 @@ const modifierTags = new Map<PotencyModifierType, LocalizedContent>([
 	[PotencyModifierType.WANDERERS_MINUET, { en: "WM" }],
 	[PotencyModifierType.MAGES_BALLAD, { en: "MB" }],
 	[PotencyModifierType.ARMYS_PAEON, { en: "AP" }],
-	[PotencyModifierType.NO_MERCY, { en: "NM" }], // gnb
-	[PotencyModifierType.SEARING_LIGHT, { en: "SL" }], // smn
+	[PotencyModifierType.NO_MERCY, { en: "NM", zh: "无情" }], // gnb
+	[PotencyModifierType.SEARING_LIGHT, { en: "SL", zh: "灼热" }], // smn
 	[PotencyModifierType.SURGING_TEMPEST, { en: "SURGING", zh: "战场风暴" }],
 	[PotencyModifierType.POWER_SURGE, { en: "PWS" }], // drg
 	[PotencyModifierType.LANCE_CHARGE, { en: "LC" }],
@@ -269,10 +302,10 @@ const modifierTags = new Map<PotencyModifierType, LocalizedContent>([
 	[PotencyModifierType.ENHANCED_PIERCING_TALON, { en: "ENH" }],
 	[PotencyModifierType.LIFE_SURGE, { en: "LS" }],
 	[PotencyModifierType.BATTLE_LITANY, { en: "BL" }],
-	[PotencyModifierType.DIVINE_MIGHT, { en: "DM" }],
-	[PotencyModifierType.REQUIESCAT, { en: "REQ" }],
-	[PotencyModifierType.FIGHT_OR_FLIGHT, { en: "FOF" }],
-	[PotencyModifierType.PET, { en: "PET" }],
+	[PotencyModifierType.DIVINE_MIGHT, { en: "DM", zh: "强化圣灵" }],
+	[PotencyModifierType.REQUIESCAT, { en: "REQ", zh: "安魂" }],
+	[PotencyModifierType.FIGHT_OR_FLIGHT, { en: "FOF", zh: "战逃" }],
+	[PotencyModifierType.PET, { en: "PET", zh: "召唤物" }],
 ]);
 export function localizeModifierTag(modifierType: PotencyModifierType): string {
 	console.assert(
